@@ -1,0 +1,687 @@
+<?php
+date_default_timezone_set('Asia/Kolkata');
+include('authentication.php');
+include('includes/header.php');
+
+$teacher_id = $_SESSION['auth_user']['user_id'] ?? $_SESSION['auth_user']['id'] ?? '';
+
+// Full class options mapping
+$full_class_options = [
+    '100' => 'Nursery',
+    '101' => 'LKG',
+    '102' => 'UKG',
+    '1' => 'Class 1',
+    '2' => 'Class 2',
+    '3' => 'Class 3',
+    '4' => 'Class 4',
+    '5' => 'Class 5',
+    '6' => 'Class 6',
+    '7' => 'Class 7',
+    '8' => 'Class 8',
+    '9' => 'Class 9',
+    '10' => 'Class 10',
+    '11' => 'Class 11 Sci (PCB)',
+    '12' => 'Class 11 Sci (PCM)',
+    '13' => 'Class 11 Comm. (With math)',
+    '14' => 'Class 11 Comm. (Without math)',
+    '15' => 'Class 11 Arts',
+    '16' => 'Class 12 Sci (PCB)',
+    '17' => 'Class 12 Sci (PCM)',
+    '18' => 'Class 12 Comm. (With math)',
+    '19' => 'Class 12 Comm. (Without math)',
+    '20' => 'Class 12 Arts'
+];
+
+// Fetch only classes that have assigned subjects for this teacher in teacher_subject
+$assigned_classes = [];
+if (!empty($teacher_id)) {
+    $q_assigned = "SELECT DISTINCT class_code FROM teacher_subject WHERE teacher_id = ? ORDER BY CAST(class_code AS UNSIGNED) ASC, class_code ASC";
+    $stmt_assigned = mysqli_prepare($con, $q_assigned);
+    if ($stmt_assigned) {
+        mysqli_stmt_bind_param($stmt_assigned, "i", $teacher_id);
+        mysqli_stmt_execute($stmt_assigned);
+        $res_assigned = mysqli_stmt_get_result($stmt_assigned);
+        while ($ac_row = mysqli_fetch_assoc($res_assigned)) {
+            $assigned_classes[] = strval($ac_row['class_code']);
+        }
+        mysqli_stmt_close($stmt_assigned);
+    }
+
+    // Fallback to class_teacher table if no teacher_subject rows found
+    if (empty($assigned_classes)) {
+        $q_ct = mysqli_query($con, "SELECT DISTINCT class FROM class_teacher WHERE user_id = '$teacher_id'");
+        if ($q_ct && mysqli_num_rows($q_ct) > 0) {
+            while ($ct_row = mysqli_fetch_assoc($q_ct)) {
+                $assigned_classes[] = strval($ct_row['class']);
+            }
+        }
+    }
+}
+
+// Fallback to all classes only if no assignment configured
+$classes_to_show = !empty($assigned_classes) ? $assigned_classes : array_keys($full_class_options);
+?>
+
+<!-- FontAwesome & Plus Jakarta Sans Font for exact theme match -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+/* Prevent horizontal scroll */
+html, body {
+    overflow-x: hidden !important;
+    max-width: 100vw !important;
+}
+
+.page-wrapper, .page-content {
+    overflow-x: hidden !important;
+    max-width: 100% !important;
+}
+
+:root {
+    --pca-font: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --pca-bg: #f8fafc;
+    --pca-card-bg: #ffffff;
+    --pca-text-main: #0f172a;
+    --pca-text-muted: #64748b;
+    --pca-border: #edf0f5;
+    --pca-primary: #5e48eb;
+    --pca-primary-hover: #4d38d6;
+}
+
+.report-page-wrap {
+    font-family: var(--pca-font) !important;
+    color: var(--pca-text-main);
+    padding: 0.5rem 0.5rem 2rem 0.5rem;
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+    box-sizing: border-box;
+}
+
+/* Monolithic White Card */
+.pca-white-card {
+    background: #ffffff;
+    border: 1px solid #edf0f5;
+    border-radius: 16px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+    overflow: hidden;
+    width: 100% !important;
+}
+
+.pca-card-header {
+    padding: 1.1rem 1.4rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #f1f3f7;
+    background: #ffffff;
+    flex-wrap: wrap;
+    gap: 0.8rem;
+}
+
+.pca-card-title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #0f172a;
+    margin-bottom: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.pca-card-body {
+    padding: 1.4rem;
+}
+
+.form-label-clean {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #475569;
+    margin-bottom: 0.4rem;
+    display: block;
+}
+
+.form-control-clean {
+    border-radius: 10px !important;
+    border: 1px solid #e2e8f0 !important;
+    padding: 0.55rem 0.85rem !important;
+    font-size: 0.88rem !important;
+    color: #1e293b !important;
+    background: #f8fafc !important;
+    height: 42px;
+    transition: all 0.2s ease;
+}
+
+.form-control-clean:focus {
+    background: #ffffff !important;
+    border-color: #5e48eb !important;
+    box-shadow: 0 0 0 3px rgba(94, 72, 235, 0.12) !important;
+    outline: none;
+}
+
+.form-control-clean:disabled {
+    background-color: #f1f5f9 !important;
+    color: #94a3b8 !important;
+    cursor: not-allowed;
+}
+
+/* Primary buttons */
+.btn-primary-action {
+    background: linear-gradient(135deg, #5e48eb 0%, #4f46e5 100%);
+    color: #ffffff !important;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 0.88rem;
+    padding: 0.55rem 1.4rem;
+    border: none;
+    box-shadow: 0 3px 10px rgba(94, 72, 235, 0.25);
+    display: inline-flex;
+    align-items: center;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    text-decoration: none !important;
+}
+
+.btn-primary-action:hover {
+    background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
+    box-shadow: 0 5px 14px rgba(94, 72, 235, 0.35);
+    transform: translateY(-1px);
+}
+
+.btn-primary-action:disabled {
+    background: #cbd5e1 !important;
+    box-shadow: none !important;
+    cursor: not-allowed;
+    transform: none !important;
+}
+
+.btn-view-link {
+    background: #ffffff;
+    color: #475569 !important;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 0.86rem;
+    padding: 0.5rem 1rem;
+    display: inline-flex;
+    align-items: center;
+    text-decoration: none !important;
+    transition: all 0.2s ease;
+}
+
+.btn-view-link:hover {
+    background: #f8fafc;
+    color: #0f172a !important;
+    border-color: #cbd5e1;
+}
+
+/* Filter Box */
+.filter-box-clean {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 1.2rem;
+    margin-bottom: 1.3rem;
+}
+
+/* Dynamic Table loaded by AJAX */
+#studentsContainer {
+    width: 100%;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+}
+
+#studentsContainer table {
+    width: 100% !important;
+    min-width: 550px;
+    margin-top: 1rem;
+    margin-bottom: 0;
+    border-collapse: separate;
+    border-spacing: 0;
+    border: 1px solid #edf0f5;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+@media (max-width: 768px) {
+    .pca-card-header {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 0.75rem;
+    }
+    .pca-card-header .btn-primary-action,
+    .pca-card-header .btn-view-link {
+        width: 100% !important;
+        justify-content: center !important;
+    }
+    .report-page-wrap {
+        padding: 0.25rem 0.25rem 1.5rem 0.25rem !important;
+    }
+    .pca-card-body {
+        padding: 1rem 0.85rem !important;
+    }
+}
+
+#studentsContainer table thead th {
+    background-color: #f8fafc !important;
+    color: #475569 !important;
+    font-size: 0.78rem !important;
+    font-weight: 800 !important;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 0.85rem 1.1rem !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+    border-top: none !important;
+}
+
+#studentsContainer table tbody td {
+    padding: 0.85rem 1.1rem !important;
+    vertical-align: middle !important;
+    border-bottom: 1px solid #f1f5f9 !important;
+    font-size: 0.88rem;
+    color: #1e293b;
+    background: #ffffff;
+}
+
+#studentsContainer table tbody tr:hover td {
+    background-color: #fbfbfe !important;
+}
+
+#studentsContainer table tbody tr:last-child td {
+    border-bottom: none !important;
+}
+
+.student-mark-input {
+    border-radius: 8px !important;
+    border: 1px solid #e2e8f0 !important;
+    padding: 0.45rem 0.8rem !important;
+    font-size: 0.9rem !important;
+    font-weight: 600;
+    max-width: 160px;
+    background: #f8fafc;
+    transition: all 0.2s ease;
+}
+
+.student-mark-input:focus {
+    background: #ffffff !important;
+    border-color: #5e48eb !important;
+    box-shadow: 0 0 0 3px rgba(94, 72, 235, 0.12) !important;
+    outline: none;
+}
+
+.student-mark-input.is-invalid {
+    border-color: #ef4444 !important;
+    background-color: #fef2f2 !important;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15) !important;
+}
+
+.mark-error-feedback {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #dc2626;
+    margin-top: 4px;
+    display: block;
+}
+</style>
+
+<div class="report-page-wrap">
+
+    <!-- Flash message -->
+    <?php include('message.php'); ?>
+
+    <!-- Monolithic White Card -->
+    <div class="pca-white-card">
+        
+        <!-- Header -->
+        <div class="pca-card-header">
+            <h4 class="pca-card-title">
+                <i class="fa-solid fa-file-pen text-primary"></i> Add Theory Marks
+            </h4>
+            <a href="view-report.php" class="btn-view-link">
+                <i class="fa-regular fa-eye me-2 text-primary"></i> View Theory Marks
+            </a>
+        </div>
+
+        <div class="pca-card-body">
+
+            <!-- Step 1: Select class, subject, exam type, total marks -->
+            <form id="loadStudentsForm" class="filter-box-clean">
+                <div class="row g-3">
+
+                    <!-- Class -->
+                    <div class="col-12 col-sm-6 col-lg-3">
+                        <label for="class_code" class="form-label-clean">Class</label>
+                        <select name="class_code" id="class_code" class="form-select form-control-clean" required>
+                            <option value="">-- Select Class --</option>
+                            <?php 
+                            $auto_select = (count($assigned_classes) === 1);
+                            foreach ($classes_to_show as $code): 
+                                $c_name = $full_class_options[$code] ?? ('Class ' . $code);
+                                $is_selected = $auto_select ? 'selected' : '';
+                            ?>
+                                <option value="<?= htmlspecialchars($code) ?>" <?= $is_selected ?>><?= htmlspecialchars($c_name) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+
+                    <!-- Exam Type -->
+                    <div class="col-12 col-sm-6 col-lg-3">
+                        <label for="exam_type" class="form-label-clean">Exam Type</label>
+                        <select name="exam_type" id="exam_type" class="form-select form-control-clean" required>
+                            <option value="">-- Select Exam Type --</option>
+                            <option value="unit_test_1">Unit Test 1</option>
+                            <option value="unit_test_2">Unit Test 2</option>
+                            <option value="unit_test_3">Unit Test 3</option>
+                            <option value="unit_test_4">Unit Test 4</option>
+                            <option value="half_year">Half Year Exam</option>
+                            <option value="final">Final Exam</option>
+                            <option value="class_test">Class Test</option>
+                        </select>
+                    </div>
+
+                    <!-- Subject -->
+                    <div class="col-12 col-sm-6 col-lg-3">
+                        <label for="subject" class="form-label-clean">Subject</label>
+                        <select name="subject" id="subject" class="form-select form-control-clean" required disabled>
+                            <option value="">-- Select Class & Exam First --</option>
+                        </select>
+                    </div>
+
+                    <!-- Total Marks -->
+                    <div class="col-12 col-sm-6 col-lg-3">
+                        <label for="total_marks" class="form-label-clean">Total Marks</label>
+                        <input type="number" name="total_marks" id="total_marks" 
+                               class="form-control form-control-clean" step="0.01" min="1" placeholder="e.g. 100" required>
+                    </div>
+
+                    <!-- Notice if all subjects submitted -->
+                    <div class="col-12 d-none" id="allSubmittedNotice">
+                        <div class="alert alert-info py-2 mb-0 d-flex justify-content-between align-items-center rounded-3 border-0" style="background: #eef2ff; color: #4338ca;">
+                            <span><i class="fa-solid fa-circle-info me-2"></i> All assigned subjects for this class and exam type have already been uploaded.</span>
+                            <a href="view-report.php" class="btn btn-sm btn-outline-primary" id="viewExistingMarksLink">View / Edit Marks</a>
+                        </div>
+                    </div>
+
+                    <!-- Load Students Button -->
+                    <div class="col-12 pt-2">
+                        <button type="button" id="loadStudentsBtn" class="btn-primary-action">
+                            <i class="fa-solid fa-users me-2"></i> Load Students
+                        </button>
+                    </div>
+
+                </div>
+            </form>
+
+            <!-- Step 2: Load Students + Enter Marks -->
+            <form action="teacher_code.php" method="POST" id="marksForm">
+                
+                <div id="markValidationAlert" class="alert alert-danger d-none mb-3 rounded-3" role="alert">
+                    <span class="me-2"><i class="fa-solid fa-triangle-exclamation"></i></span>
+                    <span id="markValidationAlertText"></span>
+                </div>
+
+                <!-- Students dynamic table loaded via AJAX -->
+                <div id="studentsContainer"></div>
+
+                <!-- Hidden fields -->
+                <input type="hidden" name="class_code" id="hidden_class">
+                <input type="hidden" name="subject" id="hidden_subject">
+                <input type="hidden" name="exam_type" id="hidden_exam_type">
+                <input type="hidden" name="total_marks" id="hidden_total">
+
+                <div class="pt-3 mt-3 border-top" id="saveMarksWrapper" style="display: none;">
+                    <button type="submit" name="save_marks" id="saveMarksBtn" class="btn-primary-action">
+                        <i class="fa-solid fa-check me-2"></i> Save Theory Marks
+                    </button>
+                </div>
+            </form>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- jQuery -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    function getMaxMarks() {
+        let max = parseFloat($("#hidden_total").val());
+        if (isNaN(max) || max <= 0) {
+            max = parseFloat($("#total_marks").val());
+        }
+        return isNaN(max) ? 0 : max;
+    }
+
+    function applyMaxMarks(maxMarks) {
+        $("#studentsContainer .student-mark-input").attr('max', maxMarks);
+    }
+
+    function validateSingleMarkInput($input) {
+        let maxMarks = getMaxMarks();
+        let rawVal = $input.val();
+        let $td = $input.closest("td");
+        let $feedback = $td.find(".mark-error-feedback");
+
+        if ($feedback.length === 0) {
+            $feedback = $('<div class="mark-error-feedback text-danger" style="display:none;"></div>');
+            $input.after($feedback);
+        }
+
+        if (rawVal === "" || rawVal === null || rawVal === undefined) {
+            $input.removeClass("is-invalid");
+            $feedback.hide().empty();
+            return true;
+        }
+
+        let val = parseFloat(rawVal);
+        if (isNaN(val)) {
+            $input.addClass("is-invalid");
+            $feedback.html('⚠️ Please enter a valid number.').show();
+            return false;
+        }
+
+        if (maxMarks > 0 && val > maxMarks) {
+            $input.addClass("is-invalid");
+            $feedback.html('⚠️ Marks (' + val + ') cannot exceed maximum marks (' + maxMarks + ')!').show();
+            return false;
+        } else if (val < 0) {
+            $input.addClass("is-invalid");
+            $feedback.html('⚠️ Marks cannot be negative!').show();
+            return false;
+        } else {
+            $input.removeClass("is-invalid");
+            $feedback.hide().empty();
+            return true;
+        }
+    }
+
+    function checkAllMarksValidity() {
+        let hasError = false;
+        let countErrors = 0;
+        let maxMarks = getMaxMarks();
+
+        $("#studentsContainer .student-mark-input").each(function () {
+            let isValid = validateSingleMarkInput($(this));
+            if (!isValid) {
+                hasError = true;
+                countErrors++;
+            }
+        });
+
+        if (hasError) {
+            $("#markValidationAlertText").html("<strong>Error:</strong> " + countErrors + " student(s) have marks exceeding maximum marks (<strong>" + maxMarks + "</strong>) or negative values. Please correct them before saving.");
+            $("#markValidationAlert").removeClass("d-none");
+            $("#saveMarksBtn").css('background', '#dc2626');
+        } else {
+            $("#markValidationAlert").addClass("d-none");
+            $("#saveMarksBtn").css('background', '');
+        }
+
+        return !hasError;
+    }
+
+    // Real-time validation as the teacher types, changes or pastes marks
+    $(document).on("input keyup change paste", ".student-mark-input", function () {
+        validateSingleMarkInput($(this));
+        checkAllMarksValidity();
+    });
+
+    // Re-validate if the Total Marks input is edited in the top form
+    $("#total_marks").on("input change", function () {
+        let newMax = parseFloat($(this).val());
+        if (!isNaN(newMax) && newMax > 0) {
+            $("#hidden_total").val(newMax);
+            applyMaxMarks(newMax);
+            checkAllMarksValidity();
+        }
+    });
+
+    // Prevent submission if any mark exceeds max marks or is negative
+    $("#marksForm").on("submit", function (e) {
+        let allValid = checkAllMarksValidity();
+        if (!allValid) {
+            e.preventDefault();
+            let $firstError = $("#studentsContainer .student-mark-input.is-invalid").first();
+            if ($firstError.length > 0) {
+                $('html, body').animate({
+                    scrollTop: $firstError.offset().top - 120
+                }, 300);
+                $firstError.focus();
+            }
+            alert("Cannot save! Some student marks exceed the maximum allowed marks (" + getMaxMarks() + "). Please correct the highlighted errors.");
+            return false;
+        }
+    });
+
+    // Load available subjects dynamically
+    function refreshAvailableSubjects() {
+        let class_code = $("#class_code").val();
+        let exam_type = $("#exam_type").val();
+        let $subjectSelect = $("#subject");
+        let $notice = $("#allSubmittedNotice");
+
+        $("#studentsContainer").empty();
+        $("#saveMarksWrapper").hide();
+        $("#markValidationAlert").addClass("d-none");
+        $notice.addClass("d-none");
+
+        if (!class_code && !exam_type) {
+            $subjectSelect.html('<option value="">-- Select Class & Exam First --</option>').prop('disabled', true);
+            $("#loadStudentsBtn").prop('disabled', false);
+            return;
+        }
+
+        if (!class_code) {
+            $subjectSelect.html('<option value="">-- Select Class First --</option>').prop('disabled', true);
+            $("#loadStudentsBtn").prop('disabled', false);
+            return;
+        }
+
+        if (!exam_type) {
+            $subjectSelect.html('<option value="">-- Select Exam Type First --</option>').prop('disabled', true);
+            $("#loadStudentsBtn").prop('disabled', false);
+            return;
+        }
+
+        $subjectSelect.html('<option value="">Loading available subjects...</option>').prop('disabled', true);
+
+        $.ajax({
+            url: "teacher_code.php",
+            type: "POST",
+            data: {
+                action: "load_subjects",
+                class_code: class_code,
+                exam_type: exam_type,
+                mark_type: "theory",
+                filter_submitted: 1
+            },
+            success: function (response) {
+                $subjectSelect.html(response);
+
+                let hasValidOptions = false;
+                $subjectSelect.find('option').each(function () {
+                    let val = $(this).val();
+                    if (val !== "") {
+                        hasValidOptions = true;
+                    }
+                });
+
+                if (hasValidOptions) {
+                    $subjectSelect.prop('disabled', false);
+                    $("#loadStudentsBtn").prop('disabled', false);
+                    $notice.addClass("d-none");
+                } else {
+                    $subjectSelect.prop('disabled', true);
+                    $("#loadStudentsBtn").prop('disabled', true);
+                    $("#viewExistingMarksLink").attr("href", "view-report.php?class_code=" + encodeURIComponent(class_code) + "&exam_type=" + encodeURIComponent(exam_type));
+                    $notice.removeClass("d-none");
+                }
+            },
+            error: function () {
+                $subjectSelect.html('<option value="">-- Error Loading Subjects --</option>').prop('disabled', true);
+            }
+        });
+    }
+
+    $("#class_code, #exam_type").on("change", function () {
+        refreshAvailableSubjects();
+    });
+
+    if ($("#class_code").val() && $("#exam_type").val()) {
+        refreshAvailableSubjects();
+    }
+
+    $("#subject").on("change", function () {
+        $("#studentsContainer").empty();
+        $("#saveMarksWrapper").hide();
+        $("#markValidationAlert").addClass("d-none");
+    });
+
+    // Load students dynamically
+    $("#loadStudentsBtn").on("click", function () {
+        let class_code = $("#class_code").val();
+        let exam_type = $("#exam_type").val();
+        let subject = $("#subject").val();
+        let total_marks = $("#total_marks").val();
+
+        if (!class_code || !exam_type || !subject) {
+            alert("Please select Class, Exam Type, and Subject first!");
+            return;
+        }
+
+        if (isNaN(parseFloat(total_marks)) || parseFloat(total_marks) <= 0) {
+            alert("Please enter a valid number greater than zero for Total Marks.");
+            return;
+        }
+
+        $("#hidden_class").val(class_code);
+        $("#hidden_subject").val(subject);
+        $("#hidden_exam_type").val(exam_type);
+        $("#hidden_total").val(total_marks);
+
+        $.ajax({
+            url: "teacher_code.php",
+            type: "POST",
+            data: {
+                action: "load_students",
+                class_code: class_code
+            },
+            success: function (response) {
+                $("#studentsContainer").html(response);
+                $("#saveMarksWrapper").show();
+                applyMaxMarks(total_marks);
+                checkAllMarksValidity();
+            },
+            error: function () {
+                alert("Error: Could not connect to the server or load data.");
+            }
+        });
+    });
+</script>
+
+<?php
+include('includes/footer.php');
+include('includes/scripts.php');
+?>

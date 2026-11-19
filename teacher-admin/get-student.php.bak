@@ -1,0 +1,165 @@
+<?php
+include('authentication.php');
+include('includes/header.php');
+
+////////////////////////////////////////////////////////////////////////////////////
+$classMapping = [
+    '100' => 'Nursery',
+    '101' => 'LKG',
+    '102' => 'UKG',
+    '1' => 'Class 1',
+    '2' => 'Class 2',
+    '3' => 'Class 3',
+    '4' => 'Class 4',
+    '5' => 'Class 5',
+    '6' => 'Class 6',
+    '7' => 'Class 7',
+    '8' => 'Class 8',
+    '9' => 'Class 9',
+    '10' => 'Class 10',
+    '11' => 'Class 11 Sci (PCB)',
+    '12' => 'Class 11 Sci (PCM)',
+    '13' => 'Class 11 Comm. (with Math)',
+    '14' => 'Class 11 Comm. (without Math)',
+    '15' => 'Class 11 Arts',
+    '16' => 'Class 12 Sci (PCB)',
+    '17' => 'Class 12 Sci (PCM)',
+    '18' => 'Class 12 Comm. (with Math)',
+    '19' => 'Class 12 Comm. (without Math)',
+    '20' => 'Class 12 Arts'
+];
+
+$user_id = $_SESSION['auth_user']['id'];
+$query_class = "SELECT class FROM class_teacher WHERE user_id = '$user_id'";
+$result = mysqli_query($con, $query_class);
+
+$classes = [];
+
+while($row = mysqli_fetch_assoc($result)) {
+    $classes[] = $row['class'];
+}
+
+// Convert to comma-separated string
+$class_ids = implode(", ", $classes);
+
+// Convert class IDs to text labels
+$display_classes = [];
+foreach($classes as $c){
+    if(isset($classMapping[$c])){
+        $display_classes[] = $classMapping[$c];
+    }
+}
+
+// If teacher selected class in GET or session
+if (isset($_GET['class']) && in_array($_GET['class'], $classes)) {
+    $selected_class = $_GET['class'];
+    $_SESSION['teacher_selected_class'] = $selected_class;
+} elseif (isset($_SESSION['teacher_selected_class']) && in_array($_SESSION['teacher_selected_class'], $classes)) {
+    $selected_class = $_SESSION['teacher_selected_class'];
+} elseif (!empty($classes)) {
+    $selected_class = $classes[0]; // auto select first assigned class
+    $_SESSION['teacher_selected_class'] = $selected_class;
+} else {
+    $selected_class = '';
+}
+/////////////////////////////////////////////////////////////////////
+?>
+
+<div class="container-fluid px-4 mt-4">
+    <div class="card shadow-sm rounded-3">
+        <div class="card-body">
+
+            <div class="row align-items-center mb-3">
+                <div class="col-md-6 col-sm-12">
+                    <h5 class="mb-2 mb-md-0">Student Information</h5>
+                </div>
+
+                <div class="col-md-6 col-sm-12">
+                    <form method="GET" class="d-flex flex-wrap align-items-center justify-content-md-end gap-2" id="filterForm">
+                        <label class="mb-0 me-2">Select Class:</label>
+                        <select name="class" class="form-select form-select-sm w-auto" onchange="document.getElementById('filterForm').submit();">
+                            <option value="">-- Select Class --</option>
+                            <?php foreach($classes as $c): ?>
+                                <option value="<?= $c ?>" <?= ($selected_class == $c) ? 'selected' : '' ?>>
+                                    <?= $classMapping[$c] ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+
+                        <a href="add-student.php" class="btn btn-success btn-sm">
+                            <i class="bx bx-plus"></i> Add Student
+                        </a>
+                    </form>
+                </div>
+            </div>
+
+            <hr class="mb-3">
+
+            <!-- Display session messages -->
+            <?php if(isset($_SESSION['message'])): ?>
+                <div class="alert alert-info">
+                    <?= $_SESSION['message']; unset($_SESSION['message']); ?>
+                </div>
+            <?php endif; ?>
+
+            <div class="table-responsive">
+                <table class="table table-hover table-bordered align-middle">
+                    <thead class="table-light text-center">
+                        <tr>
+                            <th>Roll No</th>
+                            <th>Student Name</th>
+                            <th>Father Name</th>
+                            <th>Email</th>
+                            <th>Phone</th>
+                            <th>Password</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php 
+                        $query = "SELECT * FROM users WHERE role_as = 0 AND class = '$selected_class' ORDER BY rollno ASC";
+                        $query_run = mysqli_query($con, $query);
+
+                        if(mysqli_num_rows($query_run) > 0) {
+                            foreach($query_run as $student) {
+                        ?>
+                            <tr>
+                                <td><?= htmlspecialchars($student['rollno']); ?></td>
+                                <td><?= htmlspecialchars($student['fname'] . " " . $student['lname']); ?></td>
+                                <td><?= htmlspecialchars($student['father_name']); ?></td>
+                                <td><?= htmlspecialchars($student['email']); ?></td>
+                                <td><?= !empty($student['phone_no']) ? htmlspecialchars($student['phone_no']) : "<span class='text-muted'>No Phone</span>"; ?></td>
+                                <td><?= !empty($student['password']) ? htmlspecialchars($student['password']) : "<span class='text-muted'>No Password</span>"; ?></td>
+                                <td class="text-center">
+                                    <a href="edit-student.php?id=<?= $student['id']; ?>" class="btn btn-sm btn-primary">
+                                        Edit
+                                    </a>
+                                    <form action="teacher_code.php" method="POST" class="d-inline"
+                                          onsubmit="return confirm('Are you sure you want to delete this student?');">
+                                        <input type="hidden" name="delete_student" value="<?= $student['id']; ?>">
+                                        <input type="hidden" name="class" value="<?= htmlspecialchars($selected_class); ?>">
+                                        <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        <?php
+                            }
+                        } else {
+                        ?>
+                            <tr>
+                                <td colspan="7" class="text-center text-muted">No students found</td>
+                            </tr>
+                        <?php
+                        }
+                        ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<?php
+include('includes/footer.php');
+include('includes/scripts.php');
+?>

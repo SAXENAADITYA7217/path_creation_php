@@ -1,0 +1,23 @@
+@media (max-width: 529px) {
+    .top-nav .col-auto p:first-child {
+        display: none;
+    }
+}
+
+@media (max-width: 767px) {
+    .navbar-brand {
+        font-size: 25px;       /* Set font size to 0 to hide the text */
+    } 
+}
+
+@media (max-width: 402px) {
+    .navbar-brand {
+        font-size: 22px;       /* Set font size to 0 to hide the text */
+    } 
+}
+
+
+
+
+
+

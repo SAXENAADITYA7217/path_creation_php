@@ -1,0 +1,49 @@
+.left-align {
+    text-align: left !important;
+}
+
+@media (max-width: 768px) {
+    .table-responsive {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .responsive-table {
+        width: 100%;
+        border-collapse: collapse;
+        border: 1px solid #ddd;
+    }
+
+    .responsive-table th, .responsive-table td {
+        padding: 8px;
+        text-align: left;
+        white-space: nowrap;
+        border: 1px solid #ddd;
+    }
+
+    .responsive-table td {
+        display: block;
+        text-align: left;
+        border: none;
+        padding-left: 50%;
+        position: relative;
+    }
+
+    .responsive-table td::before {
+        content: attr(data-label);
+        position: absolute;
+        left: 0;
+        width: 45%;
+        padding-left: 15px;
+        font-weight: bold;
+        text-align: left;
+    }
+
+    .responsive-table th {
+        display: none;
+    }
+
+    .row-divider {
+        border-bottom: 1px solid #000000; /* Add this line to create a line between rows */
+    }
+}

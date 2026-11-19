@@ -1,0 +1,14 @@
+#remove htal file extension https://pathcreationacademy.com/PrivacyPolicy.php 
+# to https://pathcreationacademy.com/PrivacyPolicy 
+RewriteEngine On
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^([^.]+)$ $1.php [NC,L]
+
+
+#remove htal file extension https://pathcreationacademy.com/exam_syllabus.php 
+# to https://pathcreationacademy.com/exam_syllabus 
+RewriteEngine On
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^([^.]+)$ $1.php [NC,L]

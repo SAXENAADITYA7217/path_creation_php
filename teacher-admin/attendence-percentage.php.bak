@@ -1,0 +1,163 @@
+<?php
+include('authentication.php');
+include('includes/header.php');
+include('includes/fetch_class.php');
+
+$classMapping = [
+    '100' => 'Nursery', '101' => 'LKG', '102' => 'UKG',
+    '1'=>'Class 1','2'=>'Class 2','3'=>'Class 3','4'=>'Class 4','5'=>'Class 5',
+    '6'=>'Class 6','7'=>'Class 7','8'=>'Class 8','9'=>'Class 9','10'=>'Class 10',
+    '11'=>'Class 11 Sci (PCB)','12'=>'Class 11 Sci (PCM)',
+    '13'=>'Class 11 Comm w/ Math','14'=>'Class 11 Comm w/o Math',
+    '15'=>'Class 11 Arts','16'=>'Class 12 Sci (PCB)','17'=>'Class 12 Sci (PCM)',
+    '18'=>'Class 12 Comm w/ Math','19'=>'Class 12 Comm w/o Math','20'=>'Class 12 Arts'
+];
+
+$user_id = $_SESSION['auth_user']['id'];
+
+// Fetch assigned classes
+$q = "SELECT class FROM class_teacher WHERE user_id='$user_id'";
+$r = mysqli_query($con, $q);
+
+$classes = [];
+while ($row = mysqli_fetch_assoc($r)) {
+    $classes[] = $row['class'];
+}
+
+if (empty($classes)) {
+    echo "<h4 class='text-danger mt-5 text-center'>No class assigned.</h4>";
+    include('includes/footer.php');
+    exit;
+}
+
+$selectedClass = $_GET['class'] ?? $_SESSION['teacher_selected_class'] ?? (!empty($classes) ? $classes[0] : '');
+if (!in_array($selectedClass, $classes) && !empty($classes)) {
+    $selectedClass = $classes[0];
+}
+$_SESSION['teacher_selected_class'] = $selectedClass;
+
+$current_date = date("Y-m-d");
+$fromDate = $_GET['from_date'] ?? $current_date;
+$toDate   = $_GET['to_date'] ?? $current_date;
+
+// Students list
+$stuQ = "SELECT id, fname, lname, rollno FROM users 
+         WHERE class='$selectedClass' AND role_as=0 
+         ORDER BY rollno ASC";
+$stuR = mysqli_query($con, $stuQ);
+?>
+
+<div class="container-fluid px-4">
+    <div class="card mt-4">
+        <div class="card-header">
+            <h4>Student Attendance Percentage</h4>
+        </div>
+
+        <div class="card-body">
+
+            <!-- Filters -->
+            <form method="GET" class="row g-3 mb-4">
+                <div class="col-md-3">
+                    <label>Class</label>
+                    <select name="class" class="form-control" onchange="this.form.submit()">
+                        <?php foreach($classes as $c): ?>
+                            <option value="<?= $c ?>" <?= ($selectedClass==$c)?"selected":"" ?>>
+                                <?= $classMapping[$c] ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+
+                <div class="col-md-3">
+                    <label>From Date</label>
+                    <input type="date" name="from_date" value="<?= $fromDate ?>" class="form-control">
+                </div>
+
+                <div class="col-md-3">
+                    <label>To Date</label>
+                    <input type="date" name="to_date" value="<?= $toDate ?>" class="form-control">
+                </div>
+
+                <div class="col-md-12 d-flex justify-content-end">
+                    <button class="btn btn-primary">Show</button>
+                </div>
+            </form>
+
+            <?php
+            // Total days in range
+            $start = strtotime($fromDate);
+            $end = strtotime($toDate);
+            $totalDays = ($end - $start)/(60*60*24) + 1;
+
+            // Count unique holiday dates in class
+            $holidayQ = "SELECT COUNT(DISTINCT date) AS holidayCount 
+                         FROM attendance 
+                         WHERE status = 2
+                         AND date BETWEEN '$fromDate' AND '$toDate'";
+            $holidayR = mysqli_query($con, $holidayQ);
+            $holidayData = mysqli_fetch_assoc($holidayR);
+
+            $totalHolidays = $holidayData['holidayCount'];
+            ?>
+
+            <!-- TABLE -->
+            <div class="table-responsive">
+                <table class="table table-bordered">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Roll No</th>
+                            <th>Student Name</th>
+                            <th>Present / Working Days</th>
+                            <th>Percentage</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php
+                        mysqli_data_seek($stuR, 0);
+
+                        while($stu = mysqli_fetch_assoc($stuR)):
+                            $sid = $stu['id'];
+
+                            // Attendance for student
+                            $attQ = "SELECT status FROM attendance 
+                                     WHERE user_id='$sid'
+                                     AND date BETWEEN '$fromDate' AND '$toDate'";
+                            $attR = mysqli_query($con, $attQ);
+
+                            $present = 0;
+
+                            while($a = mysqli_fetch_assoc($attR)) {
+                                if ($a['status'] == 1) $present++;
+                            }
+
+                            $workingDays = $totalDays - $totalHolidays;
+                            $percent = ($workingDays > 0) ? round(($present / $workingDays) * 100, 2) : 0;
+                        ?>
+                            <tr>
+                                <td><?= $stu['rollno'] ?></td>
+                                <td><?= $stu['fname']." ".$stu['lname'] ?></td>
+                                <td><strong><?= $present ?> / <?= $workingDays ?></strong></td>
+                                <td><strong><?= $percent ?>%</strong></td>
+                            </tr>
+                        <?php endwhile; ?>
+                    </tbody>
+                </table>
+            </div>
+
+            <?php
+                $totalWorking = $totalDays - $totalHolidays;
+            ?>
+
+            <!-- SUMMARY -->
+            <div class="mt-4 p-3 border rounded bg-light">
+                <h5><strong>Summary</strong></h5>
+                <p><strong>Total Days:</strong> <?= $totalDays ?></p>
+                <p><strong>Total Holidays:</strong> <?= $totalHolidays ?></p>
+                <p><strong>Total Working Days:</strong> <?= $totalWorking ?></p>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<?php include('includes/footer.php'); ?>

@@ -1,0 +1,139 @@
+<?php
+include('authentication.php');
+include('includes/header.php');
+?>
+
+<?php include('message.php'); ?>
+
+<div class="container-fluid px-4">
+
+    <!-- Row 1 -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-dark text-white mb-4">
+                <div class="card-body">Show Students</div>
+                <div class="card-footer d-flex align-items-center justify-content-between">
+                    <a class="small text-white stretched-link" href="get-student.php">Get</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-primary text-white mb-4">
+                <div class="card-body">Add Student</div>
+                <div class="card-footer d-flex align-items-center justify-content-between">
+                    <a class="small text-white stretched-link" href="add-student.php">Add</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-success text-white mb-4">
+                <div class="card-body">Attendance</div>
+                <div class="card-footer d-flex align-items-center justify-content-between">
+                    <a class="small text-white stretched-link" href="attendance-add.php">Mark</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-warning text-dark mb-4">
+                <div class="card-body">Theory Marks</div>
+                <div class="card-footer d-flex align-items-center justify-content-between">
+                    <a class="small text-dark stretched-link" href="add-report.php">View</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+
+    <!-- Row 2 -->
+
+
+
+    
+   
+        <div class="row mb-4">
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-secondary text-white mb-4">
+                <div class="card-body">practical_marks</div>
+                <div class="card-footer d-flex align-items-center justify-content-between">
+                    <a class="small text-white stretched-link" href=add-partical-marks.php>Notes</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-info text-white mb-4">
+                <div class="card-body">Report Card</div>
+                <div class="card-footer d-flex align-items-center justify-content-between">
+                    <a class="small text-white stretched-link" href="report_card_select.php">View</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-danger text-white mb-4">
+                <div class="card-body">Study Material</div>
+                <div class="card-footer d-flex align-items-center justify-content-between">
+                    <a class="small text-white stretched-link" href="studymaterial.php">Upload</a>
+                </div>
+            </div>
+        </div>
+       
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-secondary text-white mb-4">
+                <div class="card-body">See the Rank</div>
+                <div class="card-footer d-flex align-items-center justify-content-between">
+                    <a class="small text-white stretched-link" href=view_class_rank.php>Notes</a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- <div class="col-xl-3 col-md-6">
+            <div class="card bg-dark text-white mb-4">
+                <div class="card-body">Events</div>
+                <div class="card-footer d-flex align-items-center justify-content-between">
+                    <a class="small text-white stretched-link" href="events.php">View</a>
+                </div>
+            </div>
+        </div>
+    </div> -->
+
+    <!-- Row 3 -->
+    <!-- <div class="row mb-4">
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-primary text-white mb-4">
+                <div class="card-body">Exams</div>
+                <div class="card-footer d-flex align-items-center justify-content-between">
+                    <a class="small text-white stretched-link" href="exam.php">View</a>
+                </div>
+            </div>
+        </div> -->
+        <!-- <div class="col-xl-3 col-md-6">
+            <div class="card bg-success text-white mb-4">
+                <div class="card-body">Assignments</div>
+                <div class="card-footer d-flex align-items-center justify-content-between">
+                    <a class="small text-white stretched-link" href="assignments.php">Check</a>
+                </div>
+            </div>
+        </div> -->
+        <!-- <div class="col-xl-3 col-md-6">
+            <div class="card bg-warning text-dark mb-4">
+                <div class="card-body">Notifications</div>
+                <div class="card-footer d-flex align-items-center justify-content-between">
+                    <a class="small text-dark stretched-link" href="notifications.php">View</a>
+                </div>
+            </div>
+        </div> -->
+        <!-- <div class="col-xl-3 col-md-6">
+            <div class="card bg-info text-white mb-4">
+                <div class="card-body">Settings</div>
+                <div class="card-footer d-flex align-items-center justify-content-between">
+                    <a class="small text-white stretched-link" href="settings.php">Open</a>
+                </div>
+            </div>
+        </div>
+    </div> -->
+
+</div>
+
+<?php
+include('includes/footer.php');
+include('includes/scripts.php');
+?>

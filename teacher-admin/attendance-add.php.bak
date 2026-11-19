@@ -1,0 +1,125 @@
+<?php
+include('authentication.php');
+include('includes/header.php');
+include('includes/fetch_class.php');
+?>
+
+<div class="container-fluid px-4">
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <?php include('message.php'); ?>
+            <div class="card">
+                <div class="card-header">
+                    <h4>Add Attendance
+                        <a href="attendance-view.php<?= !empty($selected_class) ? '?class=' . urlencode($selected_class) : '' ?>" class="btn btn-danger float-end" id="viewAttendanceBtn">View Attendance</a>
+                    </h4>
+                </div>
+
+                <div class="card-body">
+                    <!-- Attendance Form -->
+                    <form action="teacher_code.php" method="POST" id="attendanceForm">
+                        <!-- Class & Date -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label>Class:</label>
+                                <select name="class" class="form-control" id="classSelect">
+                                    <option value="">-- Select Class --</option>
+                                    <?php foreach($classes as $c): ?>
+                                        <option value="<?= $c ?>" <?= ($selected_class == $c) ? 'selected' : '' ?>>
+                                            <?= $classMapping[$c] ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label>Date:</label>
+                                <input type="date" name="date" id="attendanceDate" class="form-control" 
+                                    value="<?= date('Y-m-d'); ?>" required>
+                            </div>
+                        </div>
+
+                        <!-- Holiday Option -->
+                        <div class="row mb-3">
+                            <div class="col-md-12">
+                                <input type="checkbox" id="markHoliday" name="markHoliday" value="1">
+                                <label for="markHoliday"><b>Mark this day as Holiday</b></label>
+                            </div>
+                        </div>
+
+                        <!-- Students list or Holiday message -->
+                        <div id="usersList"></div>
+
+                        <div class="col-md-12 mb-3 mt-2" id="saveBtnWrapper">
+                            <button type="submit" name="add_multiple_attendance" class="btn btn-success">Save Attendance</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function loadAttendanceList(date){
+    var selectedClass = document.querySelector('select[name="class"]').value;
+    var isHoliday = document.getElementById("markHoliday").checked;
+    var day = new Date(date).getDay(); // 0 = Sunday
+
+    // If no class selected
+    if(!selectedClass){
+        document.getElementById('usersList').innerHTML = 
+            "<div class='alert alert-warning text-center'><h6>Please select a class first.</h6></div>";
+        document.getElementById('saveBtnWrapper').style.display = "none";
+        return;
+    }
+
+    // Handle Sunday or Holiday
+    if(day === 0 || isHoliday){
+        document.getElementById('usersList').innerHTML = 
+            "<div class='alert alert-info text-center'><h5>Holiday</h5></div>";
+        document.getElementById('saveBtnWrapper').style.display = "block"; 
+    } else {
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', 'teacher_code.php?selectedClass=' + selectedClass + '&date=' + date, true);
+        xhr.onreadystatechange = function() {
+            if(xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200){
+                document.getElementById('usersList').innerHTML = xhr.responseText;
+                document.getElementById('saveBtnWrapper').style.display = "block"; 
+            }
+        };
+        xhr.send();
+    }
+}
+
+// Load initial data when page opens
+window.onload = function() {
+    var date = document.querySelector("input[name='date']").value;
+    loadAttendanceList(date);
+};
+
+// When date changes
+document.getElementById("attendanceDate").addEventListener("change", function(){
+    loadAttendanceList(this.value);
+});
+
+// When holiday checkbox changes
+document.getElementById("markHoliday").addEventListener("change", function(){
+    var date = document.querySelector("input[name='date']").value;
+    loadAttendanceList(date);
+});
+
+// ✅ When class changes
+document.getElementById("classSelect").addEventListener("change", function(){
+    var date = document.querySelector("input[name='date']").value;
+    loadAttendanceList(date);
+    var viewBtn = document.getElementById("viewAttendanceBtn");
+    if(viewBtn) {
+        viewBtn.href = "attendance-view.php" + (this.value ? "?class=" + encodeURIComponent(this.value) : "");
+    }
+});
+</script>
+
+<?php
+include('includes/footer.php');
+include('includes/scripts.php');
+?>

@@ -1,0 +1,175 @@
+
+/*.......................*/
+
+.cardc1c1 {
+    position: relative;
+    background: linear-gradient(to right, #f5f5ff, #e0a3a3);
+    padding: 50px 20px 100px;
+    text-align: center;
+  }
+  
+  .cardc1c1-content {
+    max-width: 800px;
+    margin: 0 auto;
+  }
+  
+  .cardc1c1-content h1 {
+    font-size: 36px;
+    margin: 0;
+    color: #3f51b5;
+  }
+  
+  .cardc1c1-content h1 span {
+    color: #7e57c2;
+  }
+  
+  .cardc1c1-content p {
+    font-size: 18px;
+    margin: 20px 0;
+  }
+  
+  .cardc1c1-content button {
+    padding: 10px 20px;
+    font-size: 16px;
+    color: #fff;
+    background-color: #3f51b5;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+  
+  .featuresc1c1 {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    background: #fff;
+    padding: 30px 20px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+    position: absolute;
+    width: 80%;
+    left: 50%;
+    transform: translateX(-50%);
+    top: 380px;
+    border-radius: 10px;
+   
+  }
+  
+  .featurec1c1 {
+    text-align: center;
+    width: 20%;
+  }
+  
+  .featurec1c1 .icon {
+    width: 50px;
+    height: 50px;
+    margin: 0 auto 10px;
+  }
+  
+  .featurec1c1 .icon.live {
+    background: #ffffff; /* Replace with icon */
+  }
+  
+  .featurec1c1 .icon.tests {
+    background: #ffffff; /* Replace with icon */
+  }
+  
+  .featurec1c1 .icon.doubt {
+    background: #ffffff; /* Replace with icon */
+  }
+  
+  .featurec1c1 .icon.offline {
+    background: #ffffff; /* Replace with icon */
+  }
+  
+  .featurec1c1 p {
+    font-size: 16px;
+    margin: 0;
+  }
+  
+  /* Responsive Styles */
+  @media (max-width: 768px) {
+    
+  
+  
+    .featuresc1c1 {
+        flex-direction: column;
+        top: 450px;
+        width: 90%;
+    }
+  
+    .featurec1c1 {
+        width: 100%;
+        margin-bottom: 20px;
+    }
+  }
+  
+  @media (max-width: 480px) {
+  
+    .cardc1c1-content h1 {
+        font-size: 34px;
+    }
+  
+  
+  
+    .featuresc1c1 {
+        top: 450px;
+        padding: 20px 10px;
+    }
+  
+    .featurec1c1 .icon {
+        width: 40px;
+        height: 40px;
+    }
+  
+    .featurec1c1 p {
+        font-size: 14px;
+    }
+  }
+  
+  
+  @media (max-width: 410px) {
+    .featuresc1c1 {
+        top: 500px;
+        
+    }
+    .cardc1c1-content h1 {
+        font-size: 32px;
+    }
+  }
+  
+  @media (max-width: 300px) {
+    .cardc1c1-content h1 {
+        font-size: 26px;
+    }
+  }
+  
+
+  
+  .cardc1c1gap{
+    margin-bottom: 80px;
+  }
+
+  @media (max-width: 980px) {
+    .cardc1c1gap{
+        margin-bottom: 100px;
+      }
+  }
+
+  @media (max-width: 768px) {
+    .cardc1c1gap{
+        margin-bottom: 420px;
+      }
+  }
+
+  @media (max-width: 490px) {
+    .cardc1c1gap{
+        margin-bottom: 350px;
+      }
+  }
+
+  @media (max-width: 360px) {
+    .cardc1c1gap{
+        margin-bottom: 300px;
+      }
+  }
+

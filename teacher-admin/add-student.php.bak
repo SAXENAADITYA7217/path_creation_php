@@ -1,0 +1,123 @@
+<?php
+include('authentication.php');
+include('includes/header.php');
+
+include('includes/fetch_class.php');
+
+?>
+
+<div class="container-fluid px-1">
+    <div class="row mt-1">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <h4>Add Student</h4>
+                    </div>
+                    <div>
+                        <!-- Add Row Button (Left) -->
+                        <button type="button" class="btn btn-success me-2" id="addRow">
+                            <i class="bx bx-plus"></i> Add Row
+                        </button>
+                        <!-- Back Button (Right) -->
+                        <a href="get-student.php" class="btn btn-danger">BACK</a>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    <form action="teacher_code.php" method="POST" id="studentForm">
+                        <div id="studentFields">
+                            <!-- First Row Template -->
+                            <div class="row student-row align-items-end">
+                                <div class="col-md-1 mb-3">
+                                    <label>Roll no.</label>
+                                    <input type="text" name="rollno[]" class="form-control">
+                                </div>
+
+                                <div class="col-md-3 mb-3">
+                                    <label>Student Name</label>
+                                    <input type="text" name="fname[]" class="form-control">
+                                </div>
+
+                                <div class="col-md-3 mb-3">
+                                    <label>Father Name</label>
+                                    <input type="text" name="fathername[]" class="form-control">
+                                </div>
+
+                                <div class="col-md-2 mb-3">
+                                    <label>Phone No</label>
+                                    <input type="tel" name="phone[]" class="form-control" 
+                                           pattern="[0-9]{10}" maxlength="10" required
+                                           oninput="this.value=this.value.replace(/[^0-9]/g,'');"
+                                           placeholder="Enter 10-digit phone number">
+                                </div>
+
+                                <div class="col-md-2 mb-3">
+                                    <label>Class</label>
+                                    <select name="class[]" class="form-control">
+                                        <option value="">-- Select Class --</option>
+                                            <?php foreach($classes as $c): ?>
+                                                <option value="<?= $c ?>" <?= ($selected_class == $c) ? 'selected' : '' ?>>
+                                                    <?= $classMapping[$c] ?>
+                                                </option>
+                                            <?php endforeach; ?>
+                                    </select>
+                                </div>
+
+                                <!-- Remove Button -->
+                                <div class="col-md-1 mb-3 text-center">
+                                    <button type="button" class="btn btn-outline-danger removeRow">
+                                        <i class="bx bx-x"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-12 mb-3">
+                            <button type="submit" name="add_student" class="btn btn-primary">Submit</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Add new row on click
+document.getElementById('addRow').addEventListener('click', function () {
+    let container = document.getElementById('studentFields');
+    let firstRow = container.querySelector('.student-row');
+    let newRow = firstRow.cloneNode(true);
+
+    // Clear input values
+    newRow.querySelectorAll('input').forEach(input => input.value = "");
+
+    container.appendChild(newRow);
+
+    // Attach remove event to new row button
+    attachRemoveEvents();
+});
+
+// Function to attach remove button click
+function attachRemoveEvents() {
+    document.querySelectorAll('.removeRow').forEach(btn => {
+        btn.onclick = function () {
+            let allRows = document.querySelectorAll('.student-row');
+            if (allRows.length > 1) {
+                this.closest('.student-row').remove();
+            } else {
+                alert("You must have at least one student row.");
+            }
+        }
+    });
+}
+
+// Attach remove event initially
+attachRemoveEvents();
+</script>
+
+<?php
+include('includes/footer.php');
+include('includes/scripts.php');
+?>

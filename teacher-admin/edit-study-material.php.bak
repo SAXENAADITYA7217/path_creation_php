@@ -1,0 +1,113 @@
+<?php
+include('authentication.php');
+include('includes/header.php');
+
+if(!isset($_GET['id'])){
+    $_SESSION['message'] = "❌ Material ID missing!";
+    header("Location: view-study-material.php");
+    exit();
+}
+
+$id = $_GET['id'];
+
+// Fetch existing data
+$stmt = $con->prepare("SELECT * FROM study_materials WHERE id=? LIMIT 1");
+$stmt->bind_param("i", $id);
+$stmt->execute();
+$result = $stmt->get_result();
+if($result->num_rows != 1){
+    $_SESSION['message'] = "❌ Material not found!";
+    header("Location: view-study-material.php");
+    exit();
+}
+$material = $result->fetch_assoc();
+
+// Class and material type arrays
+$class_names = [
+    '100'=>'Nursery', '101'=>'LKG', '102'=>'UKG', '1'=>'Class 1', '2'=>'Class 2', '3'=>'Class 3', 
+    '4'=>'Class 4','5'=>'Class 5','6'=>'Class 6','7'=>'Class 7','8'=>'Class 8','9'=>'Class 9','10'=>'Class 10',
+    '11'=>'Class 11 Sci (PCB)','12'=>'Class 11 Sci (PCM)','13'=>'Class 11 Comm.','14'=>'Class 11 Arts',
+    '15'=>'Class 12 Sci (PCB)','16'=>'Class 12 Sci (PCM)','17'=>'Class 12 Comm.','18'=>'Class 12 Arts'
+];
+$types = ['assignment'=>'Assignment','notes'=>'Notes','question_paper'=>'Question Paper','ppt'=>'Daily PPT'];
+?>
+
+<div class="container-fluid px-4">
+    <h4 class="mt-4">Edit Study Material</h4>
+    <?php include('message.php'); ?>
+
+    <div class="card">
+        <div class="card-body">
+            <form action="teacher_code.php" method="POST" enctype="multipart/form-data">
+                <input type="hidden" name="material_id" value="<?= $material['id'] ?>">
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label>Teacher Name:</label>
+                        <input type="text" name="teacher_name" value="<?= $material['teacher_name'] ?>" class="form-control" required>
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label>Class</label>
+                        <select name="class_name" class="form-control" required>
+                            <?php
+                            foreach($class_names as $code=>$name){
+                                $selected = ($material['class_name']==$code)?'selected':'';
+                                echo "<option value='$code' $selected>$name</option>";
+                            }
+                            ?>
+                        </select>
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label>Subject</label>
+                        <input type="text" name="subject" value="<?= $material['subject'] ?>" class="form-control" required>
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label>Material Type</label>
+                        <select name="material_type" class="form-control" required>
+                            <?php
+                            foreach($types as $key=>$val){
+                                $selected = ($material['material_type']==$key)?'selected':'';
+                                echo "<option value='$key' $selected>$val</option>";
+                            }
+                            ?>
+                        </select>
+                    </div>
+
+                    <div class="col-md-12 mb-3">
+                        <label>Title</label>
+                        <input type="text" name="title" value="<?= $material['title'] ?>" class="form-control" required>
+                    </div>
+
+                    <div class="col-md-12 mb-3">
+                        <label>Description</label>
+                        <textarea name="description" class="form-control" rows="3"><?= $material['description'] ?></textarea>
+                    </div>
+
+                    <div class="col-md-12 mb-3">
+                        <label>Upload New File (Optional)</label>
+                        <input type="file" name="file" accept=".pdf,.jpg,.jpeg,.png,.ppt,.pptx" class="form-control">
+                        <small>Current: <a href="<?= $material['file_path'] ?>" target="_blank">View</a></small>
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label>Status</label><br>
+                        <input type="checkbox" name="status" <?= ($material['status']==1)?'checked':'' ?>> Active
+                    </div>
+
+                    <div class="col-md-12 mb-3">
+                        <button type="submit" name="update_material" class="btn btn-primary">Update Material</button>
+                        <a href="view-study-material.php" class="btn btn-secondary">Cancel</a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<?php
+include('includes/footer.php');
+include('includes/scripts.php');
+?>

@@ -1,0 +1,628 @@
+<?php
+include('authentication.php');
+include('includes/header.php');
+
+// Get logged-in teacher details
+$teacher_name = $_SESSION['auth_user']['user_name'] ?? $_SESSION['auth_user']['fname'] ?? '';
+$user_id = $_SESSION['auth_user']['user_id'] ?? $_SESSION['auth_user']['id'] ?? '';
+$teacher_full_name = $teacher_name;
+$teacher_fname = $teacher_name;
+
+if (!empty($user_id)) {
+    $u_res = mysqli_query($con, "SELECT fname, lname FROM users WHERE id='$user_id' LIMIT 1");
+    if ($u_res && $u_row = mysqli_fetch_assoc($u_res)) {
+        $teacher_fname = trim($u_row['fname']);
+        $teacher_full_name = trim($u_row['fname'] . ' ' . ($u_row['lname'] ?? ''));
+    }
+}
+
+// Class names mapping
+$class_names = [
+    '100' => 'Nursery', '101' => 'LKG', '102' => 'UKG',
+    '1' => 'Class 1', '2' => 'Class 2', '3' => 'Class 3', '4' => 'Class 4', '5' => 'Class 5',
+    '6' => 'Class 6', '7' => 'Class 7', '8' => 'Class 8', '9' => 'Class 9', '10' => 'Class 10',
+    '11' => 'Class 11 Sci (PCB)', '12' => 'Class 11 Sci (PCM)',
+    '13' => 'Class 11 Comm. (with Math)', '14' => 'Class 11 Comm. (without Math)',
+    '15' => 'Class 11 Arts',
+    '16' => 'Class 12 Sci (PCB)', '17' => 'Class 12 Sci (PCM)',
+    '18' => 'Class 12 Comm. (with Math)', '19' => 'Class 12 Comm. (without Math)',
+    '20' => 'Class 12 Arts'
+];
+
+// Material types
+$types = [
+    'assignment' => 'Assignment',
+    'notes' => 'Notes',
+    'question_paper' => 'Question Paper',
+    'ppt' => 'Daily PPT',
+    'syllabus' => 'Syllabus'
+];
+
+$selected_class = $_GET['class_name'] ?? '';
+$selected_type  = $_GET['material_type'] ?? '';
+?>
+
+<!-- FontAwesome & Plus Jakarta Sans Font for exact theme match -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+/* Prevent horizontal scroll */
+html, body {
+    overflow-x: hidden !important;
+    max-width: 100vw !important;
+}
+
+.page-wrapper, .page-content, .container-fluid {
+    overflow-x: hidden !important;
+    max-width: 100% !important;
+}
+
+:root {
+    --pca-font: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --pca-bg: #f8fafc;
+    --pca-card-bg: #ffffff;
+    --pca-text-main: #0f172a;
+    --pca-text-muted: #64748b;
+    --pca-border: #edf0f5;
+    --pca-primary: #5e48eb;
+    --pca-primary-hover: #4d38d6;
+}
+
+.report-page-wrap {
+    font-family: var(--pca-font) !important;
+    color: var(--pca-text-main);
+    padding: 0.5rem 0.5rem 2rem 0.5rem;
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+    box-sizing: border-box;
+}
+
+.report-page-wrap .row {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+}
+
+/* Monolithic White Card */
+.pca-white-card {
+    background: #ffffff;
+    border: 1px solid #edf0f5;
+    border-radius: 16px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+    overflow: hidden;
+    width: 100% !important;
+}
+
+.pca-card-header {
+    padding: 1.1rem 1.4rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #f1f3f7;
+    background: #ffffff;
+    flex-wrap: wrap;
+    gap: 0.8rem;
+}
+
+.pca-card-title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #0f172a;
+    margin-bottom: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.pca-card-title i {
+    color: #5e48eb;
+}
+
+.pca-card-body {
+    padding: 1.4rem;
+}
+
+/* Filter Box */
+.filter-box-clean {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 1.2rem;
+    margin-bottom: 1.5rem;
+}
+
+.form-label-clean {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #475569;
+    margin-bottom: 0.4rem;
+    display: block;
+}
+
+.form-control-clean {
+    border-radius: 10px !important;
+    border: 1px solid #e2e8f0 !important;
+    padding: 0.55rem 0.85rem !important;
+    font-size: 0.88rem !important;
+    color: #1e293b !important;
+    background: #ffffff !important;
+    height: 42px;
+    transition: all 0.2s ease;
+    width: 100%;
+}
+
+.form-control-clean:focus {
+    background: #ffffff !important;
+    border-color: #5e48eb !important;
+    box-shadow: 0 0 0 3px rgba(94, 72, 235, 0.12) !important;
+    outline: none;
+}
+
+/* Buttons */
+.btn-primary-action {
+    background: linear-gradient(135deg, #5e48eb 0%, #4f46e5 100%);
+    color: #ffffff !important;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 0.88rem;
+    padding: 0.55rem 1.4rem;
+    border: none;
+    box-shadow: 0 3px 10px rgba(94, 72, 235, 0.25);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    text-decoration: none !important;
+    height: 42px;
+    white-space: nowrap !important;
+}
+
+.btn-primary-action:hover {
+    background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
+    box-shadow: 0 5px 14px rgba(94, 72, 235, 0.35);
+    transform: translateY(-1px);
+}
+
+.btn-back-link {
+    background: #ffffff;
+    color: #475569 !important;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 0.86rem;
+    padding: 0.55rem 1rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none !important;
+    transition: all 0.2s ease;
+    height: 42px;
+}
+
+.btn-back-link:hover {
+    background: #f8fafc;
+    color: #0f172a !important;
+    border-color: #cbd5e1;
+}
+
+/* Badges */
+.badge-ctx-pill {
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    color: #334155;
+    font-weight: 600;
+    font-size: 0.8rem;
+    padding: 0.25rem 0.65rem;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    white-space: nowrap;
+}
+
+.type-pill {
+    font-size: 0.76rem;
+    font-weight: 700;
+    padding: 0.25rem 0.6rem;
+    border-radius: 6px;
+    display: inline-block;
+    white-space: nowrap;
+}
+
+.type-notes { background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; }
+.type-assignment { background: #f3e8ff; color: #7e22ce; border: 1px solid #e9d5ff; }
+.type-question_paper { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
+.type-syllabus { background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; }
+.type-ppt { background: #ffedd5; color: #c2410c; border: 1px solid #fed7aa; }
+
+.score-pill {
+    font-weight: 700;
+    font-size: 0.78rem;
+    padding: 0.25rem 0.65rem;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    white-space: nowrap;
+}
+
+.score-pill-high {
+    background: #ecfdf5;
+    color: #059669;
+    border: 1px solid #a7f3d0;
+}
+
+.score-pill-low {
+    background: #fef2f2;
+    color: #dc2626;
+    border: 1px solid #fecaca;
+}
+
+/* File Pills */
+.btn-file-pill {
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 0.3rem 0.7rem;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    text-decoration: none !important;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+}
+
+.btn-pdf {
+    background: #fef2f2;
+    color: #dc2626 !important;
+    border: 1px solid #fecaca;
+}
+.btn-pdf:hover { background: #fee2e2; }
+
+.btn-ppt {
+    background: #fff7ed;
+    color: #c2410c !important;
+    border: 1px solid #ffedd5;
+}
+.btn-ppt:hover { background: #ffedd5; }
+
+.btn-other {
+    background: #f1f5f9;
+    color: #475569 !important;
+    border: 1px solid #e2e8f0;
+}
+.btn-other:hover { background: #e2e8f0; }
+
+/* Table */
+.table-responsive {
+    overflow-x: hidden !important;
+    overflow-y: visible !important;
+    width: 100% !important;
+    border: 1px solid #edf0f5;
+    border-radius: 12px;
+    background: #ffffff;
+}
+
+.pca-table {
+    margin-bottom: 0;
+    width: 100% !important;
+    table-layout: fixed !important;
+    border-collapse: collapse;
+}
+
+.pca-table thead th {
+    background-color: #f8fafc !important;
+    color: #475569 !important;
+    font-size: 0.76rem !important;
+    font-weight: 800 !important;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 0.85rem 1rem !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+    border-top: none !important;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.pca-table tbody td {
+    padding: 0.85rem 1rem !important;
+    vertical-align: middle !important;
+    border-bottom: 1px solid #f1f5f9 !important;
+    font-size: 0.88rem;
+    color: #1e293b;
+    background: #ffffff;
+    overflow: hidden;
+}
+
+.pca-table tbody tr:hover td {
+    background-color: #fbfbfe !important;
+}
+
+.pca-table tbody tr:last-child td {
+    border-bottom: none !important;
+}
+
+/* Action Icon Buttons */
+.btn-icon-action {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.82rem;
+    transition: all 0.15s ease;
+    text-decoration: none !important;
+}
+
+.btn-icon-action.btn-edit {
+    background: #eff6ff;
+    color: #2563eb !important;
+    border: 1px solid #dbeafe;
+}
+.btn-icon-action.btn-edit:hover {
+    background: #2563eb;
+    color: #ffffff !important;
+}
+
+.btn-icon-action.btn-del {
+    background: #fef2f2;
+    color: #dc2626 !important;
+    border: 1px solid #fee2e2;
+}
+.btn-icon-action.btn-del:hover {
+    background: #dc2626;
+    color: #ffffff !important;
+}
+
+/* Empty State */
+.empty-state-clean {
+    padding: 3rem 1.5rem;
+    background: #fafbfe;
+    border: 1px dashed #cbd5e1;
+    border-radius: 12px;
+}
+
+.empty-icon-circle {
+    width: 58px;
+    height: 58px;
+    background: #ffffff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+</style>
+
+<div class="report-page-wrap">
+
+    <!-- Flash message -->
+    <?php include('message.php'); ?>
+
+    <div class="pca-white-card">
+        <!-- Header -->
+        <div class="pca-card-header">
+            <h1 class="pca-card-title">
+                <i class="fa-solid fa-folder-open"></i>
+                My Study Materials
+            </h1>
+            <a href="studymaterial.php" class="btn-primary-action">
+                <i class="fas fa-plus"></i> Add Material
+            </a>
+        </div>
+
+        <div class="pca-card-body">
+
+            <!-- Filter Form -->
+            <form method="GET" class="filter-box-clean">
+                <div class="row g-3 align-items-end">
+                    <div class="col-lg-4 col-md-4 col-12">
+                        <label class="form-label-clean">
+                            <i class="fa-solid fa-graduation-cap text-primary me-1"></i> Class:
+                        </label>
+                        <select name="class_name" class="form-control form-control-clean">
+                            <option value="">-- All Classes --</option>
+                            <?php
+                            foreach ($class_names as $code => $name) {
+                                $selected = ($selected_class == $code) ? 'selected' : '';
+                                echo "<option value='{$code}' {$selected}>{$name}</option>";
+                            }
+                            ?>
+                        </select>
+                    </div>
+
+                    <div class="col-lg-4 col-md-4 col-12">
+                        <label class="form-label-clean">
+                            <i class="fa-solid fa-layer-group text-primary me-1"></i> Material Type:
+                        </label>
+                        <select name="material_type" class="form-control form-control-clean">
+                            <option value="">-- All Types --</option>
+                            <?php
+                            foreach ($types as $key => $val) {
+                                $selected = ($selected_type == $key) ? 'selected' : '';
+                                echo "<option value='{$key}' {$selected}>{$val}</option>";
+                            }
+                            ?>
+                        </select>
+                    </div>
+
+                    <div class="col-lg-4 col-md-4 col-12">
+                        <div class="d-flex align-items-center gap-2">
+                            <button type="submit" class="btn-primary-action flex-grow-1" style="white-space: nowrap !important;">
+                                <i class="fas fa-filter me-1"></i> Filter
+                            </button>
+                            <?php if (!empty($selected_class) || !empty($selected_type)): ?>
+                                <a href="view-study-material.php" class="btn-back-link text-nowrap" title="Reset Filters">
+                                    <i class="fas fa-rotate-right me-1"></i> Reset
+                                </a>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </div>
+            </form>
+
+            <!-- Materials Table -->
+            <div class="table-responsive">
+                <table class="pca-table">
+                    <colgroup>
+                        <col style="width: 14%;">
+                        <col style="width: 12%;">
+                        <col style="width: 12%;">
+                        <col style="width: 22%;">
+                        <col style="width: 16%;">
+                        <col style="width: 12%;">
+                        <col style="width: 6%;">
+                        <col style="width: 6%;">
+                    </colgroup>
+                    <thead>
+                        <tr>
+                            <th>Class</th>
+                            <th>Subject</th>
+                            <th>Type</th>
+                            <th>Title</th>
+                            <th>Description</th>
+                            <th>File</th>
+                            <th class="text-center">Status</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    <?php
+                    // Base query (matches teacher by user_name, full name, or first name)
+                    $query = "SELECT * FROM study_materials WHERE (teacher_name = ? OR teacher_name = ? OR teacher_name = ?)";
+                    $params = [$teacher_name, $teacher_full_name, $teacher_fname];
+                    $types_str = "sss";
+
+                    // Add optional filters
+                    if (!empty($selected_class)) {
+                        $query .= " AND class_name = ?";
+                        $params[] = $selected_class;
+                        $types_str .= "s";
+                    }
+
+                    if (!empty($selected_type)) {
+                        $query .= " AND material_type = ?";
+                        $params[] = $selected_type;
+                        $types_str .= "s";
+                    }
+
+                    $query .= " ORDER BY id DESC";
+
+                    $stmt = $con->prepare($query);
+                    if ($stmt) {
+                        if (count($params) > 0) {
+                            $stmt->bind_param($types_str, ...$params);
+                        }
+                        $stmt->execute();
+                        $result = $stmt->get_result();
+                    } else {
+                        $result = false;
+                    }
+
+                    if ($result && $result->num_rows > 0) {
+                        while ($row = $result->fetch_assoc()) {
+                            $class_display = $class_names[$row['class_name']] ?? $row['class_name'];
+                            $type_key = $row['material_type'];
+                            $type_display = $types[$type_key] ?? $type_key;
+                            $filePath = htmlspecialchars($row['file_path']);
+                            $type_css = 'type-' . strtolower(str_replace(' ', '_', $type_key));
+                    ?>
+                        <tr>
+                            <td>
+                                <span class="badge-ctx-pill">
+                                    <i class="fa-solid fa-graduation-cap text-primary me-1"></i> <?= htmlspecialchars($class_display) ?>
+                                </span>
+                            </td>
+                            <td>
+                                <span class="fw-semibold text-dark"><?= htmlspecialchars($row['subject']) ?></span>
+                            </td>
+                            <td>
+                                <span class="type-pill <?= $type_css ?>"><?= htmlspecialchars($type_display) ?></span>
+                            </td>
+                            <td>
+                                <strong class="text-dark" title="<?= htmlspecialchars($row['title']) ?>">
+                                    <?= htmlspecialchars($row['title']) ?>
+                                </strong>
+                            </td>
+                            <td>
+                                <span class="text-muted" style="font-size: 0.82rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;" title="<?= htmlspecialchars($row['description']) ?>">
+                                    <?= htmlspecialchars($row['description']) ?: '&mdash;' ?>
+                                </span>
+                            </td>
+                            <td>
+                                <?php if ($row['file_type'] == 'image'): ?>
+                                    <a href="<?= $filePath ?>" target="_blank" class="d-inline-block">
+                                        <img src="<?= $filePath ?>" width="40" height="40" style="object-fit:cover; border-radius:8px; border: 1px solid #e2e8f0;">
+                                    </a>
+                                <?php elseif ($row['file_type'] == 'pdf'): ?>
+                                    <a href="<?= $filePath ?>" target="_blank" class="btn-file-pill btn-pdf">
+                                        <i class="fa-solid fa-file-pdf"></i> PDF
+                                    </a>
+                                <?php elseif ($row['file_type'] == 'ppt'): ?>
+                                    <a href="<?= $filePath ?>" target="_blank" class="btn-file-pill btn-ppt">
+                                        <i class="fa-solid fa-file-powerpoint"></i> PPT
+                                    </a>
+                                <?php else: ?>
+                                    <a href="<?= $filePath ?>" target="_blank" class="btn-file-pill btn-other">
+                                        <i class="fa-solid fa-download"></i> View
+                                    </a>
+                                <?php endif; ?>
+                            </td>
+                            <td class="text-center">
+                                <?php if ($row['status'] == 1): ?>
+                                    <span class="score-pill score-pill-high">
+                                        <i class="fa-solid fa-circle-check me-1"></i>Active
+                                    </span>
+                                <?php else: ?>
+                                    <span class="score-pill score-pill-low">
+                                        <i class="fa-solid fa-circle-xmark me-1"></i>Inactive
+                                    </span>
+                                <?php endif; ?>
+                            </td>
+                            <td class="text-end">
+                                <div class="d-inline-flex align-items-center gap-1">
+                                    <a href="edit-study-material.php?id=<?= $row['id'] ?>" class="btn-icon-action btn-edit" title="Edit Material">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="teacher_code.php?delete_material_id=<?= $row['id'] ?>"
+                                       onclick="return confirm('Are you sure you want to delete this material?');"
+                                       class="btn-icon-action btn-del" title="Delete Material">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    <?php
+                        }
+                    } else {
+                    ?>
+                        <tr>
+                            <td colspan="8">
+                                <div class="empty-state-clean text-center my-3">
+                                    <div class="empty-icon-circle mx-auto mb-3">
+                                        <i class="fa-solid fa-folder-open text-muted fa-lg"></i>
+                                    </div>
+                                    <h6 class="fw-bold text-dark mb-1">No study materials uploaded yet</h6>
+                                    <p class="text-muted mb-3" style="font-size: 0.85rem;">Upload files, assignments, notes, or PPTs for your students.</p>
+                                    <a href="studymaterial.php" class="btn-primary-action btn-sm">
+                                        <i class="fas fa-plus"></i> Add Material
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    <?php } ?>
+                    </tbody>
+                </table>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<?php
+include('includes/footer.php');
+include('includes/scripts.php');
+?>
